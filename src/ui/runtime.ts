@@ -12,7 +12,9 @@ import { browserStorage, readDisclosureAck, readLastDomain, readProfile, readSav
 export type RuntimeState =
   | { kind: 'unconfigured' }
   | { kind: 'needs_signin' }
-  | { kind: 'ready'; email: string | null; llm: LlmPort; store: StorePort; clock: ClockPort; progress: ProgressControl };
+  | { kind: 'ready'; email: string | null; llm: LlmPort; store: StorePort; clock: ClockPort; progress: ProgressControl;
+      /** True when this device had no local profile AND the account lookup failed, so we cannot tell a new user from a returning one. */
+      lookupFailed: boolean };
 
 /** Opt-in progress saving (default OFF) and the local resume snapshot (no answer text). */
 export interface ProgressControl {
@@ -90,26 +92,27 @@ export async function loadRuntime(): Promise<RuntimeState> {
   const db = getFirestore(app);
   let on = readSavePref(uid); // default OFF (AGENTS.md §6)
   let profile = readProfile(uid);
+  let lookupFailed = false;
   if (profile === null) {
     // New browser or cleared storage: ONE read of the user's own document so a returning user is not sent through onboarding again.
     try {
       const remote = await readUserDoc(db, uid);
-      if (remote?.profile) {
-        profile = remote.profile;
-        writeProfile(uid, profile);
-        if (remote.saveProgress) { on = true; writeSavePref(uid, true); }
-      }
-    } catch { /* offline, or rules not deployed yet: fall through to onboarding */ }
+      if (remote?.saveProgress) { on = true; writeSavePref(uid, true); }
+      if (remote?.profile) { profile = remote.profile; writeProfile(uid, profile); }
+    } catch (e) {
+      lookupFailed = true; // offline, App Check refused, or rules: do not silently treat a returning user as new
+      console.warn('Account lookup failed:', (e as { code?: string }).code ?? 'unknown');
+    }
   }
   const progress: ProgressControl = {
     isOn: () => on,
     async setOn(next) {
       if (next === on) return;
       await writeSaveProgress(db, uid, next); // throws first, so the local flag only flips if the server accepted
-      if (next && profile !== null) await writeProfileRemote(db, uid, profile).catch(() => undefined); // best effort: the profile also lives on this device
       on = next;
       writeSavePref(uid, next);
       if (!next) writeSnapshot(uid, null);
+      if (next && profile !== null) await writeProfileRemote(db, uid, profile); // throws so the caller can warn: otherwise other devices would ask for onboarding again
     },
     loadSnapshot: () => (on ? readSnapshot(uid) : null),
     saveSnapshot: (s) => { if (on) writeSnapshot(uid, s); },
@@ -132,6 +135,7 @@ export async function loadRuntime(): Promise<RuntimeState> {
     store: createFirestoreStore(db, uid, progress.isOn, { storage: browserStorage(), now: () => Date.now(), ttlMs: CACHE_TTL_MS }),
     clock: { now: () => Date.now() },
     progress,
+    lookupFailed,
   };
 }
 
