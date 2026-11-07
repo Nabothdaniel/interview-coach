@@ -1,0 +1,68 @@
+rules_version = '2';
+// DENY BY DEFAULT. Not yet covered by emulator tests — do NOT deploy until
+// tests/rules/* exist and pass (AGENTS.md §4, §9).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Question bank: read-only for signed-in users; writes only by admins.
+    match /questions/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // App config: read for signed-in users; write only admins.
+    match /config/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Admin allow-list: never client-writable (created via local admin-SDK script).
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Per-user data. Owner-only. Field names, types and sizes are validated here, not just in the client.
+    function validProfileFields(d) {
+      return (!('targetRole' in d) || (d.targetRole is string && d.targetRole.size() >= 2 && d.targetRole.size() <= 60))
+        && (!('level' in d) || d.level in ['student', 'graduate', 'entry', 'experienced']);
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['displayName', 'saveProgress', 'createdAt', 'targetRole', 'level'])
+        && request.resource.data.saveProgress is bool
+        && request.resource.data.saveProgress == false
+        && validProfileFields(request.resource.data);
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'saveProgress', 'targetRole', 'level'])
+        && request.resource.data.saveProgress is bool
+        && validProfileFields(request.resource.data);
+      allow delete: if false;
+
+      // Sessions are persisted only if the user opted in. Scores and question ids only: no answer text.
+      match /sessions/{sid} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid
+          && get(/databases/$(database)/documents/users/$(uid)).data.saveProgress == true
+          && request.resource.data.keys().hasOnly(['startedAt', 'domain', 'scores', 'breakdown', 'summary'])
+          && request.resource.data.startedAt is int
+          && request.resource.data.domain in ['it', 'business', 'graduate']
+          && request.resource.data.scores is list && request.resource.data.scores.size() <= 50
+          && request.resource.data.breakdown is list && request.resource.data.breakdown.size() <= 50
+          && request.resource.data.summary is string && request.resource.data.summary.size() <= 4000;
+        allow update, delete: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

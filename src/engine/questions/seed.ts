@@ -1,0 +1,55 @@
+import type { Domain, Question } from '../types';
+
+const s = (id: string, domain: Domain, difficulty: 1 | 2 | 3, text: string, benchmarkAnswer: string, keyPoints: string[], keywords: string[]): Question =>
+  ({ id, domain, difficulty, text, benchmarkAnswer, keyPoints, keywords, reviewed: false, source: 'seed-v1' });
+
+/** Starter bank. ALL `reviewed:false`: not validated by an HR professional. Never describe these as validated. */
+export const SEED_QUESTIONS: readonly Question[] = [
+  s('seed-it-1', 'it', 1, 'Tell me about yourself and why you are interested in a career in IT.',
+    'A short background, the skills or projects that prepared you, what motivates you about technology, and how that connects to the role.',
+    ['brief relevant background', 'skills or projects', 'genuine motivation', 'link to the role'], ['background', 'projects', 'motivation']),
+  s('seed-it-2', 'it', 1, 'What is the difference between a front-end and a back-end developer?',
+    'Front-end work covers what users see and interact with in the browser (HTML, CSS, JavaScript). Back-end work covers servers, databases, business logic and APIs that power the interface.',
+    ['front-end is the user interface', 'back-end is server, data and logic', 'they communicate through APIs'], ['front-end', 'back-end', 'API']),
+  s('seed-it-3', 'it', 2, 'What is the difference between a primary key and a foreign key in a database?',
+    'A primary key uniquely identifies each row in a table and cannot be null. A foreign key is a column that references the primary key of another table, linking the two and enforcing referential integrity.',
+    ['primary key uniquely identifies a row', 'foreign key references another table', 'maintains relationships and integrity'], ['primary key', 'foreign key', 'table']),
+  s('seed-it-4', 'it', 2, 'Describe a technical problem you solved during a project or internship and how you approached it.',
+    'Describe the problem and its impact, how you investigated it, the fix you chose and why, and the measurable result or what you learned.',
+    ['clear problem description', 'investigation steps', 'solution and reasoning', 'result or lesson'], ['problem', 'solution', 'result']),
+  s('seed-it-5', 'it', 3, 'A web application you maintain has suddenly become slow in production. How would you diagnose it?',
+    'Confirm and scope the problem, check recent changes, inspect monitoring and logs, separate front-end, network, server and database causes, test hypotheses one at a time, fix, then add monitoring to prevent recurrence.',
+    ['confirm and scope the issue', 'check recent changes and logs', 'isolate layer: client, network, server, database', 'test one hypothesis at a time', 'prevent recurrence'], ['logs', 'monitoring', 'database']),
+
+  s('seed-biz-1', 'business', 1, 'Why did you choose to study business administration, and where do you see yourself in five years?',
+    'Explain what drew you to the field, the strengths it built, and a realistic five-year goal that fits the organisation and shows a plan to grow.',
+    ['reason for choosing the field', 'strengths gained', 'realistic five-year goal', 'fit with the organisation'], ['career', 'goal', 'growth']),
+  s('seed-biz-2', 'business', 1, 'How do you prioritise your work when you have several deadlines at the same time?',
+    'List all tasks, rank by urgency and importance, communicate with stakeholders about trade-offs, schedule focused time, and review progress regularly.',
+    ['list and rank tasks', 'urgency versus importance', 'communicate trade-offs', 'review progress'], ['priority', 'deadline', 'schedule']),
+  s('seed-biz-3', 'business', 2, 'How would you handle a team member who is consistently missing deadlines?',
+    'Speak privately to understand the cause, listen without blaming, agree clear expectations and support, follow up, and escalate only if the pattern continues.',
+    ['private conversation', 'understand root cause', 'agree expectations and support', 'follow up', 'escalate if needed'], ['feedback', 'deadline', 'support']),
+  s('seed-biz-4', 'business', 2, 'Explain the difference between revenue and profit, and why both matter to a business.',
+    'Revenue is total income from sales; profit is what remains after costs and expenses. Revenue shows market demand and scale, profit shows sustainability and efficiency.',
+    ['revenue is total income', 'profit is income minus costs', 'revenue shows demand', 'profit shows sustainability'], ['revenue', 'profit', 'costs']),
+  s('seed-biz-5', 'business', 3, 'Your department’s budget has been cut by 20%. How would you decide what to reduce?',
+    'Review all spending against goals, separate essential from discretionary items, assess impact and risk of each cut, consult the team, protect core priorities, and communicate the plan clearly.',
+    ['review spending against goals', 'essential versus discretionary', 'assess impact and risk', 'consult and communicate'], ['budget', 'priorities', 'impact']),
+
+  s('seed-grad-1', 'graduate', 1, 'Tell me about yourself.',
+    'A concise summary of your education, key experiences or projects, strengths, and what you are looking for, tied to the role.',
+    ['education and experience summary', 'key strengths', 'what you want next', 'relevance to the role'], ['education', 'strengths', 'role']),
+  s('seed-grad-2', 'graduate', 1, 'What are your greatest strengths, and what is one area you are working to improve?',
+    'Name one or two strengths with brief evidence, then an honest improvement area with concrete steps you are taking.',
+    ['strengths with evidence', 'honest improvement area', 'steps being taken'], ['strength', 'improve', 'example']),
+  s('seed-grad-3', 'graduate', 2, 'Tell me about a time you worked in a team to achieve a goal.',
+    'Describe a specific situation, your own role, the actions you took to collaborate, and a measurable result.',
+    ['specific situation', 'own role', 'collaboration actions', 'measurable result'], ['team', 'result']),
+  s('seed-grad-4', 'graduate', 2, 'What did you learn from your NYSC year, an internship, or volunteering that you would bring to this job?',
+    'Name a specific experience, the skills or lessons gained such as adaptability or communication, and how they apply to the role.',
+    ['specific experience', 'skills or lessons learned', 'application to the role'], ['NYSC', 'internship', 'skills']),
+  s('seed-grad-5', 'graduate', 3, 'Describe a time you made a mistake or something did not go to plan. What did you do afterwards?',
+    'Describe the situation honestly, take responsibility, explain how you fixed it and informed others, and what you changed to prevent it happening again.',
+    ['honest description', 'took responsibility', 'corrective action', 'lesson applied afterwards'], ['mistake', 'responsibility', 'learned']),
+];

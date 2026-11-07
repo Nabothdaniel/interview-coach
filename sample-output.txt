@@ -1,0 +1,74 @@
+
+===== honest money-driven choice (reconstructed)
+Q: Why did you choose to study business administration, and where do you see yourself in five years?
+A: To be honest I chose business administration because it was what I could afford at the time. My family could not pay for the course I really wanted. In five years I just want a stable job.
+{
+  "understood": "The candidate explained that they chose business administration due to financial constraints and family limitations regarding their preferred course. For their five-year goal, they simply stated they want a stable job.",
+  "headline": "Honesty is commendable, but you can frame your practical beginnings into a compelling professional story.",
+  "tier": "low",
+  "relevance": 0.4,
+  "relevanceText": "You answered both parts of the question, but your explanations lacked the detail needed to show your strengths and career vision.",
+  "clarity": 0.8,
+  "clarityText": "Your meaning is straightforward, honest, and easy to understand with no confusing language or structural issues.",
+  "strengths": [
+    "You were completely honest about your educational journey and circumstances.",
+    "You addressed both parts of the interview question clearly."
+  ],
+  "improvements": [
+    "Pivot from the financial constraints of your start to the valuable skills and resilience you gained while studying business administration.",
+    "Expand your five-year goal to specify a role or level of responsibility you aim to achieve rather than just stating a stable job."
+  ],
+  "couldAdd": [
+    "Mention the specific strengths or skills you gained from studying business administration.",
+    "Elaborate on your five-year career goal beyond just wanting a stable job, connecting it to potential professional growth.",
+    "Show how your background or goals align with the organisation you are applying to."
+  ],
+  "hint": "Acknowledge how you adapted to studying business administration, highlight what you learned from it, and paint a picture of a specific professional milestone you hope to reach in five years."
+}
+
+===== strong, specific
+Q: How do you prioritise your work when you have several deadlines at the same time?
+A: I list everything due, rank by deadline and impact, and tell my supervisor early if two things clash. During my internship I had a report and a stock count due the same Friday, so I did the count first, agreed a Monday morning slot for the report, and checked in on Thursday.
+{
+  "understood": "The candidate explained that they prioritise work by listing all pending tasks, ranking them based on deadlines and impact, and communicating early with supervisors if conflicts arise. They supported this with an example from their internship where they managed a clash between a report and a stock count by rescheduling one and communicating proactively.",
+  "headline": "You gave a clear, practical answer backed by a great real-life example.",
+  "tier": "high",
+  "relevance": 1,
+  "relevanceText": "You directly answered the question by explaining your ranking process and provided a strong real-world internship example involving competing deadlines for a report and a stock count.",
+  "clarity": 1,
+  "clarityText": "Your meaning is exceptionally clear, logical, and well-structured, moving smoothly from your general method to a specific, relatable example.",
+  "strengths": [
+    "Provided a concrete internship example showing how you handled competing deadlines.",
+    "Demonstrated proactive communication with your supervisor when a clash occurred."
+  ],
+  "improvements": [
+    "You covered all key points well; to make it even stronger, you could briefly mention how you schedule uninterrupted focus blocks for the highest priority items."
+  ],
+  "couldAdd": [],
+  "hint": "Keep using this exact structured approach, and add a quick note about how you block time on your calendar to protect focus for the most critical task."
+}
+
+===== Pidgin-flavoured but strong
+Q: Tell me about a time you worked in a team to achieve a goal.
+A: For my final year project we be four, I be the team lead. I share the work for board, we dey meet two times for week, and when one guy dey struggle I sit with am. We finish before deadline and we score 78 percent, highest for class.
+{
+  "understood": "The candidate described leading a four-person final year project team where they divided tasks, held twice-weekly meetings, and assisted a struggling member, resulting in completing the project before the deadline and achieving a score of 78 percent.",
+  "headline": "You gave a concrete and relatable example with an impressive measurable result.",
+  "tier": "high",
+  "relevance": 0.9,
+  "relevanceText": "You directly addressed the question by sharing a clear example from your final year project, detailing your role as team lead and how you managed the workload.",
+  "clarity": 0.85,
+  "clarityText": "The meaning of your response is very clear and well-organised chronologically. The use of Nigerian Pidgin does not hinder understanding at all; the message about leadership, meetings, supporting a teammate, and the final grade comes across strongly.",
+  "strengths": [
+    "Clear ownership of your role as team lead",
+    "Demonstrated empathy and proactive help when a teammate struggled",
+    "Included a strong, measurable result of 78 percent and finishing before the deadline"
+  ],
+  "improvements": [
+    "Frame your collaboration steps using standard professional terminology to match formal interview settings while keeping your authentic voice."
+  ],
+  "couldAdd": [
+    "Elaborate slightly more on the specific nature of the project and the exact challenges you faced while managing the tasks."
+  ],
+  "hint": "Keep your great details about supporting your teammate and achieving the highest score, but frame the task division and meetings using clear professional terms."
+}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.firebase/
+firebase-debug.log
+service-account*.json
+.appcheck-debug-token
+coverage/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
