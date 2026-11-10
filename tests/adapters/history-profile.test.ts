@@ -15,7 +15,7 @@ beforeEach(() => { for (const m of [getDocs, getDoc, updateDoc, setDoc]) m.mockR
 
 describe('listSessions', () => {
   it('queries newest first, loads old sessions without a breakdown, and drops invalid documents', async () => {
-    getDocs.mockResolvedValue({ docs: [{ data: () => good }, { data: () => ({ ...good, domain: 'law' }) }, { data: () => ({ nope: 1 }) }] });
+    getDocs.mockResolvedValue({ docs: [{ data: () => good }, { data: () => ({ ...good, domain: 'astrology' }) }, { data: () => ({ nope: 1 }) }] });
     const out = await listSessions({} as never, 'u1');
     expect(orderBy).toHaveBeenCalledWith('startedAt', 'desc');
     expect(out).toHaveLength(1);

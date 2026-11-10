@@ -3,7 +3,7 @@
 Read `ANALYSIS.md` first. These rules are **mandatory** for every human and AI agent working in this repo. If a rule conflicts with a request, stop and say so; do not silently bend it.
 
 ## 0. Product in one line
-Text-based interview-prep coach: domains **IT / Business Administration / General Graduate**; Gemini (via Firebase AI Logic) evaluates answers; **no server of our own**; Firebase Hosting + Auth + Firestore + App Check.
+Text-based interview-prep coach: 15 domains (IT, Business Administration, General Graduate, Finance, Engineering, Healthcare, Education, Law, Marketing, HR, Customer Service, Media, Logistics, Energy, Public Service); Gemini (via Firebase AI Logic) evaluates answers; **no server of our own**; Firebase Hosting + Auth + Firestore + App Check.
 
 ## 1. Stack (fixed — do not swap without explicit user approval)
 - **Next.js (App Router) + React + TypeScript (strict), as a STATIC EXPORT** (`output: 'export'` in `next.config.ts`) served by Firebase Hosting. This is what keeps us server-less.
@@ -44,7 +44,7 @@ The user must confirm ("engine approved") before any UI work begins.
 - Do not log answer text to console/analytics in production.
 
 ## 5. Data & content rules
-- Question schema: `domain ∈ {it,business,graduate}`, `difficulty ∈ {1,2,3}`, `text`, `benchmarkAnswer`, `keyPoints[]`, `keywords[]`, `reviewed:boolean`, `source`.
+- Question schema: `domain ∈ DOMAINS` (15 ids in `src/engine/config.ts`, starting with it/business/graduate), `difficulty ∈ {1,2,3}`, `text`, `benchmarkAnswer`, `keyPoints[]`, `keywords[]`, `reviewed:boolean`, `source`.
 - Seed questions ship `reviewed:false`. **Never** claim HR-validated. No duplicate or near-duplicate questions; importer rejects schema violations.
 - Nigerian/West African context is a design goal (§2.4 of thesis): include local employers/sectors, NYSC, graduate-trainee schemes — without stereotypes.
 - **No fabricated research data.** Never invent evaluation results, SUS scores, user-study numbers, accuracy figures, or citations. Report only numbers produced by a recorded run. The pre/post study data comes from humans, not this app's self-reported scores.

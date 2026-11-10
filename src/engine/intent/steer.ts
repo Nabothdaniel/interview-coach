@@ -12,11 +12,24 @@ export type Steer =
 const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9\s']/g, ' ').replace(/\s+/g, ' ').trim();
 
 /** Longest alias first so "business administration" wins over "business". */
-const ALIASES: [string, Domain][] = [
+const RAW_ALIASES: [string, Domain][] = [
+  ['accounting', 'finance'], ['banking', 'finance'], ['finance', 'finance'], ['accountant', 'finance'],
+  ['engineering', 'engineering'], ['engineer', 'engineering'],
+  ['healthcare', 'healthcare'], ['health care', 'healthcare'], ['medical', 'healthcare'], ['medicine', 'healthcare'], ['nursing', 'healthcare'],
+  ['education', 'education'], ['teaching', 'education'], ['teacher', 'education'],
+  ['law', 'law'], ['legal', 'law'], ['lawyer', 'law'],
+  ['marketing', 'marketing'], ['public relations', 'marketing'],
+  ['human resources', 'hr'], ['human resource', 'hr'], ['hr', 'hr'],
+  ['customer service', 'customer'], ['customer care', 'customer'],
+  ['media', 'media'], ['journalism', 'media'],
+  ['logistics', 'logistics'], ['supply chain', 'logistics'],
+  ['energy', 'energy'], ['oil and gas', 'energy'], ['oil gas', 'energy'],
+  ['public service', 'public'], ['civil service', 'public'], ['ngo', 'public'], ['nonprofit', 'public'], ['non profit', 'public'], ['public sector', 'public'],
   ['general graduate roles', 'graduate'], ['general graduate', 'graduate'], ['graduate roles', 'graduate'], ['fresh graduate', 'graduate'], ['graduate', 'graduate'],
   ['business administration', 'business'], ['business admin', 'business'], ['business', 'business'], ['management', 'business'],
   ['information technology', 'it'], ['technology', 'it'], ['tech', 'it'], ['software', 'it'], ['it', 'it'],
 ];
+const ALIASES: [string, Domain][] = [...RAW_ALIASES].sort((a, b) => b[0].length - a[0].length);
 
 const SIMPLE: Record<'help' | 'harder' | 'easier' | 'clear_focus', string[]> = {
   help: ['help', 'what can i say', 'what can i do', 'commands', 'options', 'what can you do'],

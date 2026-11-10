@@ -1,10 +1,10 @@
-import type { Domain, Question } from '../types';
-
-const s = (id: string, domain: Domain, difficulty: 1 | 2 | 3, text: string, benchmarkAnswer: string, keyPoints: string[], keywords: string[]): Question =>
-  ({ id, domain, difficulty, text, benchmarkAnswer, keyPoints, keywords, reviewed: false, source: 'seed-v1' });
+import type { Question } from '../types';
+import { seedQ as s } from './seed-helper';
+import { SEED_MORE_A } from './seed-more-a';
+import { SEED_MORE_B } from './seed-more-b';
 
 /** Starter bank. ALL `reviewed:false`: not validated by an HR professional. Never describe these as validated. */
-export const SEED_QUESTIONS: readonly Question[] = [
+const CORE: readonly Question[] = [
   s('seed-it-1', 'it', 1, 'Tell me about yourself and why you are interested in a career in IT.',
     'A short background, the skills or projects that prepared you, what motivates you about technology, and how that connects to the role.',
     ['brief relevant background', 'skills or projects', 'genuine motivation', 'link to the role'], ['background', 'projects', 'motivation']),
@@ -53,3 +53,5 @@ export const SEED_QUESTIONS: readonly Question[] = [
     'Describe the situation honestly, take responsibility, explain how you fixed it and informed others, and what you changed to prevent it happening again.',
     ['honest description', 'took responsibility', 'corrective action', 'lesson applied afterwards'], ['mistake', 'responsibility', 'learned']),
 ];
+
+export const SEED_QUESTIONS: readonly Question[] = [...CORE, ...SEED_MORE_A, ...SEED_MORE_B];

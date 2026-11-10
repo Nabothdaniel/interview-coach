@@ -13,7 +13,7 @@ export function FeedbackCard({ fb }: { fb: Feedback }) {
       <div className="ui-row" style={{ margin: '10px 0' }}>
         <Tag tone={TIER_TONE[fb.contentRelevance.tier]} tip={TIER_TIP[fb.contentRelevance.tier]}>{TIER_LABEL[fb.contentRelevance.tier]}</Tag>
       </div>
-      <div className="ui-grid2" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="ui-grid2 ui-fbgrid">
         <StatRing label="Relevance" tip={DIM_TIP.relevance} value={fb.contentRelevance.score} size={56} />
         <StatRing label="Clarity" tip={DIM_TIP.clarity} value={fb.communicationClarity.score} size={56} />
         <StatRing label="Confidence" tip={DIM_TIP.confidence} value={fb.confidenceTone.confidence} size={56} />

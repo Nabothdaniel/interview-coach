@@ -28,6 +28,10 @@ const GLYPHS = {
   info: { d: 'M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18zM12 11v5M12 8h.01' },
   alert: { d: 'M12 4 21.5 19.5h-19zM12 10v4M12 17h.01' },
   logout: { d: 'M10 4.5H6.5A2 2 0 0 0 4.5 6.5v11a2 2 0 0 0 2 2H10M14 8l4 4-4 4M18 12H9.5' },
+  mic: { d: 'M12 3.5a3 3 0 0 0-3 3V12a3 3 0 0 0 6 0V6.5a3 3 0 0 0-3-3zM5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3', accent: 'M12 3.5a3 3 0 0 0-3 3V12a3 3 0 0 0 6 0V6.5a3 3 0 0 0-3-3z' },
+  speaker: { d: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11', accent: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4z' },
+  trash: { d: 'M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13M10.5 11v5M13.5 11v5' },
+  stop: { d: 'M7 7h10v10H7z', accent: 'M7 7h10v10H7z' },
   wave: { d: 'M4 12h2M8 8v8M12 5v14M16 8v8M20 12h-2' },
 } as const satisfies Record<string, Glyph>;
 

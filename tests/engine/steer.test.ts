@@ -5,9 +5,10 @@ import { q } from '../helpers/fakes';
 
 describe('routeSteer', () => {
   it.each([
-    ['ask me about SQL', { kind: 'focus', topic: 'sql' }],
     ['Focus on teamwork please'.replace(' please', ''), { kind: 'focus', topic: 'teamwork' }],
-    ["let's practise customer service", { kind: 'focus', topic: 'customer service' }],
+    ["let's practise handling complaints", { kind: 'focus', topic: 'handling complaints' }],
+    ["let's practise customer service", { kind: 'domain', domain: 'customer' }],
+    ['ask me about SQL', { kind: 'focus', topic: 'sql' }],
     ['can we do questions about the NYSC', { kind: 'focus', topic: 'nysc' }],
     ['harder', { kind: 'harder' }],
     ['Make it easier!', { kind: 'easier' }],
@@ -28,6 +29,8 @@ describe('routeSteer', () => {
     expect(routeSteer('it')).toBeNull();
     expect(routeSteer('business', true)).toEqual({ kind: 'domain', domain: 'business' });
     expect(routeSteer('IT, networking', true)).toEqual({ kind: 'domain', domain: 'it', topic: 'networking' });
+    expect(routeSteer('law', true)).toEqual({ kind: 'domain', domain: 'law' });
+    expect(routeSteer('oil and gas, safety', true)).toEqual({ kind: 'domain', domain: 'energy', topic: 'safety' });
     expect(routeSteer('business administration customer service', true)).toEqual({ kind: 'domain', domain: 'business', topic: 'customer service' });
   });
 

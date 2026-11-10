@@ -5,7 +5,7 @@ const ok = { startedAt: 1_700_000_000_000, domain: 'it', scores: [{ relevance: 0
 
 describe('toSessionDoc', () => {
   it('passes a valid record through unchanged', () => expect(toSessionDoc(ok)).toEqual(ok));
-  it('rejects an unknown domain', () => expect(() => toSessionDoc({ ...ok, domain: 'law' })).toThrow());
+  it('rejects an unknown domain', () => expect(() => toSessionDoc({ ...ok, domain: 'astrology' })).toThrow());
   it('rejects out-of-range scores', () => expect(() => toSessionDoc({ ...ok, scores: [{ ...ok.scores[0]!, relevance: 1.2 }] })).toThrow());
   it('drops unexpected fields such as answer text', () => {
     expect(toSessionDoc({ ...ok, answerText: 'secret' } as never)).not.toHaveProperty('answerText');

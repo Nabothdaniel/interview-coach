@@ -19,7 +19,16 @@ export const TIER_MODERATE_MIN = 0.5;
 export const LEVELS = ['student', 'graduate', 'entry', 'experienced'] as const;
 export const MAX_ROLE_CHARS = 60;
 
-export const DOMAINS = ['it', 'business', 'graduate'] as const;
+export const DOMAINS = [
+  'it', 'business', 'graduate', 'finance', 'engineering', 'healthcare', 'education', 'law', 'marketing', 'hr', 'customer', 'media', 'logistics', 'energy', 'public',
+] as const;
+
+/** Human-readable names (the prompt and the UI use these; ids stay stable because saved sessions and Firestore rules use them). */
+export const DOMAIN_LABEL: Record<(typeof DOMAINS)[number], string> = {
+  it: 'IT', business: 'Business Administration', graduate: 'General Graduate Roles', finance: 'Accounting, Banking & Finance', engineering: 'Engineering',
+  healthcare: 'Healthcare & Medical', education: 'Education & Teaching', law: 'Law & Legal', marketing: 'Marketing, Sales & PR', hr: 'Human Resources',
+  customer: 'Customer Service & Administration', media: 'Media & Creative', logistics: 'Logistics & Supply Chain', energy: 'Energy, Oil & Gas', public: 'Public Service & NGOs',
+};
 export const DIFFICULTIES = [1, 2, 3] as const;
 
 /** Max questions per session (scored + skipped). */

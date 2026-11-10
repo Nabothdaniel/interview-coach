@@ -1,11 +1,13 @@
 'use client';
-import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { DOMAINS, type Domain, MAX_ANSWER_CHARS, type SessionStatus } from '../../engine';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { MAX_ANSWER_CHARS, type SessionStatus } from '../../engine';
 import { Icon } from '../icons/Icon';
-import { AvatarChip, BarChart, Bubble, Button, Card, Chip, Composer, IconRail, Loading, Menu, Modal, Pane, PaneBody, Shell, Stage, Switch, Tag, Widget } from '../kit';
+import { BarChart, Bubble, Button, Card, Chip, Composer, IconButton, IconRail, Loading, Menu, Modal, Pane, PaneBody, Shell, Stage, Switch, Tag, Widget } from '../kit';
 import type { RuntimeState } from '../runtime';
 import { useInterview } from '../useInterview';
+import { useSpeechOutput } from '../voice';
 import { DOMAIN_META } from './domains';
+import { DomainPicker } from './DomainPicker';
 import { FeedbackCard } from './FeedbackCard';
 import { CHIP_TIP, TIER_TIP, WIDGET_TIP } from './hints';
 import { levelLabel, ProfileForm } from './ProfileForm';
@@ -24,7 +26,6 @@ const STATE_LABEL = { current: 'In progress', answered: 'Answered', skipped: 'Sk
 const TIER_LABEL = { high: 'Strong', moderate: 'Partial', low: 'Needs focus' } as const;
 /** What the coach is doing while a call is in flight (display only; the engine decides the actual flow). */
 const busyLabel = (s: SessionStatus): string => (s === 'AWAITING_ANSWER' || s === 'FEEDBACK' || s === 'EVALUATING' ? 'Reviewing your answer…' : 'Preparing your question…');
-const isDomain = (d: string | null): d is Domain => d !== null && (DOMAINS as readonly string[]).includes(d);
 const LEVEL = { 1: 'Gentle', 2: 'Medium', 3: 'Challenging' } as const;
 const PLACEHOLDER: Partial<Record<SessionStatus, string>> = {
   DOMAIN_SELECT: 'Type a domain, e.g. "IT, networking"',
@@ -47,8 +48,35 @@ export function CoachScreen({ runtime, onSignOut }: { runtime: RuntimeState | nu
   const [profileOpen, setProfileOpen] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
   const [profile, setProfile] = useState(() => (runtime?.kind === 'ready' ? runtime.progress.profile() : null));
+  const thread = useRef<HTMLDivElement>(null);
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [iv.items.length, iv.busy]);
+  const tts = useSpeechOutput();
+  const [readAloud, setReadAloud] = useState(false);
+  const spoken = useRef<number>(-1);
+  const { speak, cancel } = tts;
+
+  // Scroll: after the coach replies, show the TOP of the reply (so it can be read from the start); after the user sends or while waiting, follow the bottom.
+  useEffect(() => {
+    const box = thread.current;
+    if (!box) return;
+    const last = iv.items[iv.items.length - 1];
+    if (iv.busy || !last || last.kind === 'user') { end.current?.scrollIntoView({ block: 'end' }); return; }
+    let startId = last.id;
+    for (let i = iv.items.length - 1; i >= 0 && iv.items[i]?.kind !== 'user'; i--) startId = iv.items[i]?.id ?? startId;
+    const el = box.querySelector<HTMLElement>(`[data-item="${startId}"]`);
+    if (el) box.scrollTo({ top: box.scrollTop + el.getBoundingClientRect().top - box.getBoundingClientRect().top - 8 });
+  }, [iv.items, iv.busy]);
+
+  // Read new coach questions and feedback aloud when the user has turned that on.
+  useEffect(() => {
+    if (!readAloud) return;
+    const last = iv.items[iv.items.length - 1];
+    if (!last || last.id === spoken.current || (last.kind !== 'question' && last.kind !== 'feedback')) return;
+    spoken.current = last.id;
+    const fb = last.feedback;
+    speak(fb ? [fb.headline || last.text, fb.recommendations[0]].filter(Boolean).join('. ') : last.text);
+  }, [iv.items, readAloud, speak]);
+  useEffect(() => { if (!readAloud) cancel(); }, [readAloud, cancel]);
 
   const canType = !iv.busy && (iv.status === 'DOMAIN_SELECT' || iv.status === 'AWAITING_ANSWER' || iv.status === 'FEEDBACK' || iv.status === 'SUMMARY');
   const answering = iv.status === 'AWAITING_ANSWER';
@@ -56,7 +84,6 @@ export function CoachScreen({ runtime, onSignOut }: { runtime: RuntimeState | nu
   const questions = deriveQuestions(iv.items);
   const p = iv.progress;
   const pct = p ? Math.min(100, Math.round((p.answered / p.max) * 100)) : 0;
-  const picked = iv.domain ?? iv.lastDomain;
   const ended = iv.status === 'SUMMARY' || iv.status === 'CLOSED';
   const inProgress = !ended && (iv.progress?.answered ?? 0) > 0;
 
@@ -87,12 +114,7 @@ export function CoachScreen({ runtime, onSignOut }: { runtime: RuntimeState | nu
 
         <Pane variant="list" label="Practice" title={<><b>All</b> Practice</>}>
           {profile ? <p className="ui-note" style={{ padding: '0 20px' }}>Preparing for <b>{profile.targetRole}</b> · {levelLabel(profile.level)}</p> : null}
-          <div className="ui-avrow">
-            {DOMAINS.map((d) => (
-              <AvatarChip key={d} tip={DOMAIN_META[d].blurb} name={DOMAIN_META[d].short} role={DOMAIN_META[d].role} icon={DOMAIN_META[d].icon} tone={DOMAIN_META[d].tone}
-                selected={isDomain(picked) && picked === d} disabled={!chooser || iv.busy} onSelect={() => void iv.chooseDomain(d)} />
-            ))}
-          </div>
+          {iv.domain ? <p className="ui-note" style={{ padding: '0 20px' }}>Domain: <b>{DOMAIN_META[iv.domain].label}</b></p> : null}
           <PaneBody>
             {questions.length === 0 ? <p className="ui-note">Your questions will appear here as you work through the session.</p> : null}
             {[...questions].reverse().map((q) => (
@@ -105,28 +127,26 @@ export function CoachScreen({ runtime, onSignOut }: { runtime: RuntimeState | nu
           </PaneBody>
         </Pane>
 
-        <Pane label="Interview" title={<>Interview coach</>} action={<Tag>{STATUS_LABEL[iv.status]}</Tag>}>
+        <Pane label="Interview" title={<>Interview coach</>} action={<span className="ui-row">
+            {tts.supported ? <IconButton icon="speaker" label={readAloud ? 'Stop reading aloud' : 'Read questions and feedback aloud'} tipAlign="end" aria-pressed={readAloud} onClick={() => setReadAloud((v) => !v)} /> : null}
+            <Tag>{STATUS_LABEL[iv.status]}</Tag></span>}>
           <Notice runtime={runtime} />
-          <div className="ui-thread" aria-live="polite">
-            {iv.items.map((it) => {
-              if (it.kind === 'user') return <Bubble key={it.id} from="me">{it.text}</Bubble>;
-              if (it.kind === 'feedback' && it.feedback) return <Fragment key={it.id}><Bubble from="coach">{it.text}</Bubble><FeedbackCard fb={it.feedback} /></Fragment>;
-              if (it.kind === 'summary' && it.summary) return <Suspense key={it.id} fallback={<Loading label="Preparing your summary…" />}><SummaryCard summary={it.summary} /></Suspense>;
+          <div className="ui-thread" aria-live="polite" ref={thread}>
+            {iv.items.map((it) => <div key={it.id} className="ui-item" data-item={it.id}>{(() => {
+              if (it.kind === 'user') return <Bubble from="me">{it.text}</Bubble>;
+              if (it.kind === 'feedback' && it.feedback) return <><Bubble from="coach">{it.text}</Bubble><FeedbackCard fb={it.feedback} /></>;
+              if (it.kind === 'summary' && it.summary) return <Suspense fallback={<Loading label="Preparing your summary…" />}><SummaryCard summary={it.summary} /></Suspense>;
               if (it.kind === 'disclosure') {
                 return (
-                  <Card key={it.id} eyebrow="Before we begin" title="You are talking to an AI">
+                  <Card eyebrow="Before we begin" title="You are talking to an AI">
                     <p className="ui-meta" style={{ lineHeight: 1.5 }}><Icon name="shield" size={14} /> {it.text}</p>
                     {iv.status === 'DISCLOSURE' ? <Button icon="check" loading={iv.busy} onClick={() => void iv.acknowledge()}>I understand</Button> : null}
                   </Card>
                 );
               }
-              return <Bubble key={it.id} from="coach" variant={it.kind === 'question' ? 'question' : it.kind === 'distress' ? 'distress' : 'plain'}>{it.text}</Bubble>;
-            })}
-            {chooser ? <div className="ui-row" style={{ flexWrap: 'wrap' }}>
-              {isDomain(iv.lastDomain) ? <Button variant="accent" icon="repeat" disabled={iv.busy} onClick={() => void iv.chooseDomain(iv.lastDomain as Domain)}>Continue with {DOMAIN_META[iv.lastDomain].label}</Button> : null}
-              {DOMAINS.filter((d) => d !== iv.lastDomain).map((d) => (
-                <Button key={d} variant="ghost" icon={DOMAIN_META[d].icon} disabled={iv.busy} onClick={() => void iv.chooseDomain(d)}>{DOMAIN_META[d].label}</Button>
-              ))}</div> : null}
+              return <Bubble from="coach" variant={it.kind === 'question' ? 'question' : it.kind === 'distress' ? 'distress' : 'plain'}>{it.text}</Bubble>;
+            })()}</div>)}
+            {chooser ? <DomainPicker initial={iv.lastDomain} disabled={iv.busy} onPick={(d) => void iv.chooseDomain(d)} /> : null}
             {ended ? <div className="ui-row"><Button icon="plus" disabled={iv.busy} onClick={iv.newSession}>Start a new session</Button></div> : null}
             {iv.busy ? <Bubble from="coach"><Loading label={busyLabel(iv.status)} /></Bubble> : null}
             <div ref={end} />
@@ -138,7 +158,7 @@ export function CoachScreen({ runtime, onSignOut }: { runtime: RuntimeState | nu
             {answering || iv.status === 'FEEDBACK' ? <><Chip icon="layers" tip={CHIP_TIP.harder} disabled={!canType} onClick={() => void iv.send('harder')}>Harder</Chip><Chip icon="layers" tip={CHIP_TIP.easier} disabled={!canType} onClick={() => void iv.send('easier')}>Easier</Chip><Chip icon="flag" tip={CHIP_TIP.end} disabled={!canType} onClick={() => void iv.send('end')}>End</Chip></> : null}
             {iv.status === 'SUMMARY' ? <Chip icon="layers" tip={CHIP_TIP.again} disabled={!canType} onClick={() => void iv.send('change domain')}>Practise again</Chip> : null}
           </div>
-          <Composer disabled={!canType} maxLength={MAX_ANSWER_CHARS} onSend={(t) => void iv.send(t)} placeholder={canType ? PLACEHOLDER[iv.status] ?? 'Type a message' : STATUS_LABEL[iv.status]} />
+          <Composer onMicStart={cancel} disabled={!canType} maxLength={MAX_ANSWER_CHARS} onSend={(t) => void iv.send(t)} placeholder={canType ? PLACEHOLDER[iv.status] ?? 'Type a message' : STATUS_LABEL[iv.status]} />
         </Pane>
 
         <Pane variant="aside" label="Insights" title="Insights">

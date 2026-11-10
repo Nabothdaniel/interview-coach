@@ -21,9 +21,14 @@ describe('seed question bank', () => {
       expect(new Set(qs.map((q) => q.difficulty))).toEqual(new Set([1, 2, 3]));
     }
   });
+  it('offers 15 domains and every one has a full starter set', () => {
+    expect(DOMAINS.length).toBe(15);
+    expect(new Set(SEED_QUESTIONS.map((q) => q.domain))).toEqual(new Set(DOMAINS));
+    expect(SEED_QUESTIONS.every((q) => q.reviewed === false)).toBe(true);
+  });
   it('schema rejects violations', () => {
     expect(QuestionSchema.safeParse({ ...SEED_QUESTIONS[0], difficulty: 4 }).success).toBe(false);
-    expect(QuestionSchema.safeParse({ ...SEED_QUESTIONS[0], domain: 'law' }).success).toBe(false);
+    expect(QuestionSchema.safeParse({ ...SEED_QUESTIONS[0], domain: 'astrology' }).success).toBe(false);
     expect(QuestionSchema.safeParse({ ...SEED_QUESTIONS[0], keyPoints: [] }).success).toBe(false);
   });
 });

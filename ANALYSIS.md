@@ -16,7 +16,7 @@
 | F1 | Register / Login | Fig 3.1 |
 | F2 | Select interview domain: **IT, Business Administration, General Graduate Roles** | §1.5, Fig 3.1 |
 | F3 | Start interview session; bot asks questions from a repository | Fig 3.1, §3.3 |
-| F4 | User answers in **text** (no voice/video) | §1.5 |
+| F4 | User answers in **text or by voice** (browser dictation into the answer box; no video) | §1.5 |
 | F5 | Each answer evaluated: intent, entities, relevance, sentiment/tone | §3.3.3 |
 | F6 | Adaptive feedback on 4 dimensions: Content Relevance, Communication Clarity, Confidence & Professional Tone, Targeted Improvement Recommendations | §2.2, §3.3 |
 | F7 | Session summary at end | Fig 3.3 |

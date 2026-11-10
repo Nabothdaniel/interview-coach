@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { sanitizeProfileText, wrapCandidateAnswer } from '../safety/guard';
-import { MAX_ROLE_CHARS } from '../config';
+import { DOMAIN_LABEL, MAX_ROLE_CHARS } from '../config';
 import type { CandidateProfile, Level, Question } from '../types';
 import { EvaluationSchema, INTENTS } from './schema';
 
@@ -43,7 +43,7 @@ export function buildUserPrompt(q: Question, answerText: string, profile?: Candi
   const role = profile ? sanitizeProfileText(profile.targetRole, MAX_ROLE_CHARS) : '';
   return [
     ...(role !== '' && profile ? [`<candidate_profile>Preparing for: ${role}. Level: ${LEVEL_LABEL[profile.level]}.</candidate_profile>`] : []),
-    `Domain: ${q.domain}. Difficulty: ${q.difficulty}/3.`,
+    `Domain: ${DOMAIN_LABEL[q.domain]}. Difficulty: ${q.difficulty}/3.`,
     `Question: ${q.text}`,
     `Benchmark answer: ${q.benchmarkAnswer}`,
     `Key points: ${q.keyPoints.join(' | ')}`,

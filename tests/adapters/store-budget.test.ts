@@ -120,7 +120,7 @@ describe('Firestore write budget', () => {
 describe('invalid session record', () => {
   it('is rejected before any write and does not consume the rate guard', async () => {
     const s = make();
-    await expect(s.saveSession({ ...rec(1), domain: 'law' })).rejects.toThrow();
+    await expect(s.saveSession({ ...rec(1), domain: 'astrology' })).rejects.toThrow();
     expect(addDoc).not.toHaveBeenCalled();
     addDoc.mockResolvedValue(undefined);
     await s.saveSession(rec(2));
