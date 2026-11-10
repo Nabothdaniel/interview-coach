@@ -12,6 +12,8 @@ interface Recognition {
   onresult: ((e: RecognitionEvent) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onspeechstart: (() => void) | null;
+  onspeechend: (() => void) | null;
   start: () => void; stop: () => void; abort: () => void;
 }
 type RecognitionCtor = new () => Recognition;
@@ -22,7 +24,11 @@ const ERRORS: Record<string, string> = {
   'no-speech': 'I did not hear anything. Try again.',
   'audio-capture': 'No microphone was found.',
   network: 'Voice input needs an internet connection.',
+  'language-not-supported': 'This language is not supported for voice input on this device.',
 };
+/** Errors after which restarting would just fail again. */
+const FATAL = new Set(['not-allowed', 'service-not-allowed', 'audio-capture', 'network', 'language-not-supported']);
+const MAX_RESTARTS = 40;
 
 function recognitionCtor(): RecognitionCtor | null {
   if (typeof window === 'undefined') return null;
@@ -32,37 +38,68 @@ function recognitionCtor(): RecognitionCtor | null {
 
 export interface SpeechInput {
   supported: boolean; listening: boolean; error: string | null;
+  /** True while the recogniser itself reports that someone is speaking (no second microphone stream needed). */
+  speaking: boolean;
   /** Starts dictation. `onText` receives the full transcript so far (replace, don't append). */
   start: (onText: (transcript: string) => void, onEnd?: () => void) => void;
   stop: () => void;
 }
 
+/**
+ * Dictation that survives phones: mobile browsers end a recognition session after a short pause or a quiet second, so while the user has not
+ * pressed stop we quietly restart it and keep what was already heard. Fatal errors (blocked mic, no network) stop it and are shown.
+ */
 export function useSpeechInput(lang = 'en-NG'): SpeechInput {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const rec = useRef<Recognition | null>(null);
-  useEffect(() => { setSupported(recognitionCtor() !== null); return () => rec.current?.abort(); }, []);
+  const want = useRef(false);
+  useEffect(() => { setSupported(recognitionCtor() !== null); return () => { want.current = false; rec.current?.abort(); }; }, []);
 
   const start = useCallback((onText: (t: string) => void, onEnd?: () => void): void => {
     const Ctor = recognitionCtor();
     if (!Ctor) return;
     rec.current?.abort();
-    const r = new Ctor();
-    r.lang = lang; r.continuous = true; r.interimResults = true;
-    r.onresult = (e) => {
-      const parts: string[] = [];
-      for (let i = 0; i < e.results.length; i++) parts.push(e.results[i]?.[0]?.transcript ?? '');
-      onText(joinSegments(parts));
+    want.current = true;
+    let carry = ''; let full = ''; let restarts = 0; let quiet = 0; let useLang = lang; let fatal = false;
+    const finish = (): void => { want.current = false; setListening(false); setSpeaking(false); onEnd?.(); };
+    const begin = (): void => {
+      const r = new Ctor();
+      r.lang = useLang; r.continuous = true; r.interimResults = true;
+      r.onresult = (e) => {
+        const parts: string[] = [];
+        for (let i = 0; i < e.results.length; i++) parts.push(e.results[i]?.[0]?.transcript ?? '');
+        const heard = joinSegments(parts);
+        full = [carry, heard].filter((x) => x !== '').join(' ');
+        if (heard !== '') quiet = 0;
+        onText(full);
+      };
+      r.onspeechstart = () => setSpeaking(true);
+      r.onspeechend = () => setSpeaking(false);
+      r.onerror = (e) => {
+        if (e.error === 'language-not-supported' && useLang !== 'en-US') { useLang = 'en-US'; return; }
+        if (e.error === 'no-speech') { quiet++; return; }
+        if (e.error === 'aborted') return;
+        if (FATAL.has(e.error)) fatal = true;
+        setError(ERRORS[e.error] ?? 'Voice input stopped unexpectedly.');
+      };
+      r.onend = () => {
+        setSpeaking(false);
+        const retry = want.current && !fatal && restarts < MAX_RESTARTS && quiet < 4;
+        if (!retry) { if (want.current && quiet >= 4) setError(ERRORS['no-speech'] ?? null); finish(); return; }
+        restarts++; carry = full;
+        setTimeout(() => { if (!want.current) { finish(); return; } try { begin(); } catch { finish(); } }, 120);
+      };
+      rec.current = r;
+      r.start();
     };
-    r.onerror = (e) => { setError(ERRORS[e.error] ?? (e.error === 'aborted' ? null : 'Voice input stopped unexpectedly.')); };
-    r.onend = () => { setListening(false); onEnd?.(); };
-    rec.current = r;
     setError(null);
-    try { r.start(); setListening(true); } catch { setListening(false); }
+    try { begin(); setListening(true); } catch { finish(); }
   }, [lang]);
-  const stop = useCallback(() => { rec.current?.stop(); }, []);
-  return { supported, listening, error, start, stop };
+  const stop = useCallback(() => { want.current = false; rec.current?.stop(); }, []);
+  return { supported, listening, speaking, error, start, stop };
 }
 
 export interface SpeechOutput { supported: boolean; speaking: boolean; speak: (text: string) => void; cancel: () => void }

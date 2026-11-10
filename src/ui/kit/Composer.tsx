@@ -23,7 +23,11 @@ export function Composer({ onSend, disabled = false, placeholder = 'Type your an
   const transcript = useRef('');
   const mic = useSpeechInput();
   const { listening, stop: stopMic } = mic;
-  const meter = useMicLevels(listening);
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => { setCoarse(window.matchMedia('(pointer: coarse)').matches); }, []);
+  // Phones usually let only one thing use the microphone: a second stream can make dictation fail or stop. So on touch devices the bars
+  // follow the recogniser's own "speaking" signal instead of a separate microphone meter.
+  const meter = useMicLevels(listening && !coarse);
 
   useEffect(() => {
     const el = box.current;
@@ -31,7 +35,7 @@ export function Composer({ onSend, disabled = false, placeholder = 'Type your an
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   }, [value, listening]);
-  useEffect(() => { if (!disabled && !listening) box.current?.focus(); else if (disabled && listening) { mode.current = 'cancel'; stopMic(); } }, [disabled, listening, stopMic]);
+  useEffect(() => { if (!disabled && !listening && !coarse) box.current?.focus(); else if (disabled && listening) { mode.current = 'cancel'; stopMic(); } }, [disabled, listening, stopMic, coarse]);
   useEffect(() => {
     if (!listening) return;
     setSecs(0);
@@ -58,7 +62,7 @@ export function Composer({ onSend, disabled = false, placeholder = 'Type your an
   const finish = (how: 'commit' | 'send' | 'cancel'): void => { mode.current = how; stopMic(); };
 
   const nearLimit = value.length >= maxLength * 0.8;
-  const hint = mic.error ?? (listening ? (heard !== '' ? `Heard: ${heard}` : meter.ok ? 'Recording… speak clearly. Tap Send to submit it, ✓ to edit it first, or the bin to discard.' : 'Recording… (level display unavailable)')
+  const hint = mic.error ?? (listening ? (heard !== '' ? `Heard: ${heard}` : (meter.ok || coarse) ? 'Recording… speak clearly. Tap Send to submit it, ✓ to edit it first, or the bin to discard.' : 'Recording… (level display unavailable)')
     : nearLimit ? `${value.length} / ${maxLength} characters`
       : mic.supported ? 'Enter adds a new line · Send button submits · The mic uses your browser’s speech service' : 'Enter adds a new line · Send button submits');
   return (
@@ -68,9 +72,15 @@ export function Composer({ onSend, disabled = false, placeholder = 'Type your an
           <IconButton icon="trash" label="Discard recording" onClick={() => finish('cancel')} />
           <span className="ui-rec__dot" aria-hidden="true" />
           <span className="ui-rec__time" role="timer">{clock(secs)}</span>
-          <div className="ui-wave" aria-hidden="true">
-            {meter.levels.map((v, i) => <i key={i} style={{ height: `${Math.max(10, Math.round(v * 100))}%` }} />)}
-          </div>
+          {coarse ? (
+            <div className={`ui-wave ui-wave--signal${mic.speaking ? ' is-speaking' : ''}`} aria-hidden="true">
+              {Array.from({ length: 28 }, (_, i) => <i key={i} />)}
+            </div>
+          ) : (
+            <div className="ui-wave" aria-hidden="true">
+              {meter.levels.map((v, i) => <i key={i} style={{ height: `${Math.max(10, Math.round(v * 100))}%` }} />)}
+            </div>
+          )}
           <IconButton icon="check" label="Add to the box so I can edit before sending" onClick={() => finish('commit')} />
           <IconButton icon="send" label="Stop and send my answer" tipAlign="end" solid large onClick={() => finish('send')} />
         </div>
@@ -83,7 +93,7 @@ export function Composer({ onSend, disabled = false, placeholder = 'Type your an
           <IconButton icon="send" label="Send" tipAlign="end" solid large disabled={disabled || value.trim() === ''} onClick={send} />
         </div>
       )}
-      <p className="ui-composer__hint" aria-live="polite">{hint}</p>
+      <p className={`ui-composer__hint${listening || mic.error ? ' ui-composer__hint--on' : ''}`} aria-live="polite">{hint}</p>
     </>
   );
 }
