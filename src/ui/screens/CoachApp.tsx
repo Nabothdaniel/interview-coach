@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { loadRuntime, type RuntimeState, signOutUser } from '../runtime';
+import { Splash } from '../kit';
 import { AuthScreen } from './AuthScreen';
 import { CoachScreen } from './CoachScreen';
 import { OnboardingScreen } from './OnboardingScreen';
@@ -13,9 +14,10 @@ export function CoachApp() {
   useEffect(refresh, [refresh]);
   const signOut = useCallback(() => { void signOutUser().then(() => { setRuntime(null); refresh(); }); }, [refresh]);
 
-  if (runtime?.kind === 'needs_signin') return <AuthScreen onSignedIn={refresh} />;
+  if (runtime === null) return <Splash label="Starting up…" />;
+  if (runtime.kind === 'needs_signin') return <AuthScreen onSignedIn={refresh} />;
   // Onboarding comes first: the coach needs to know the role before it starts asking questions.
-  if (runtime?.kind === 'ready' && runtime.progress.profile() === null && runtime.lookupFailed && !skipLookup) return <LookupFailedScreen onRetry={refresh} onContinue={() => setSkipLookup(true)} />;
-  if (runtime?.kind === 'ready' && runtime.progress.profile() === null) return <OnboardingScreen progress={runtime.progress} onDone={refresh} />;
+  if (runtime.kind === 'ready' && runtime.progress.profile() === null && runtime.lookupFailed && !skipLookup) return <LookupFailedScreen onRetry={refresh} onContinue={() => setSkipLookup(true)} />;
+  if (runtime.kind === 'ready' && runtime.progress.profile() === null) return <OnboardingScreen progress={runtime.progress} onDone={refresh} />;
   return <CoachScreen runtime={runtime} onSignOut={signOut} />;
 }

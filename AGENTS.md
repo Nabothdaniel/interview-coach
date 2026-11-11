@@ -45,7 +45,7 @@ The user must confirm ("engine approved") before any UI work begins.
 
 ## 5. Data & content rules
 - Question schema: `domain ∈ DOMAINS` (15 ids in `src/engine/config.ts`, starting with it/business/graduate), `difficulty ∈ {1,2,3}`, `text`, `benchmarkAnswer`, `keyPoints[]`, `keywords[]`, `reviewed:boolean`, `source`.
-- Seed questions ship `reviewed:false`. **Never** claim HR-validated. No duplicate or near-duplicate questions; importer rejects schema violations.
+- Seed questions are `reviewed:true` once the project owner has checked them (done 2026-11-11 for the starter bank); new unchecked questions ship `reviewed:false`. **Never** claim HR-validated unless an HR professional did it. No duplicate or near-duplicate questions; importer rejects schema violations.
 - Nigerian/West African context is a design goal (§2.4 of thesis): include local employers/sectors, NYSC, graduate-trainee schemes — without stereotypes.
 - **No fabricated research data.** Never invent evaluation results, SUS scores, user-study numbers, accuracy figures, or citations. Report only numbers produced by a recorded run. The pre/post study data comes from humans, not this app's self-reported scores.
 

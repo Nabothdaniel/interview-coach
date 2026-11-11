@@ -12,6 +12,8 @@ interface Recognition {
   onresult: ((e: RecognitionEvent) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onstart: (() => void) | null;
+  onaudiostart: (() => void) | null;
   onspeechstart: (() => void) | null;
   onspeechend: (() => void) | null;
   start: () => void; stop: () => void; abort: () => void;
@@ -29,6 +31,10 @@ const ERRORS: Record<string, string> = {
 /** Errors after which restarting would just fail again. */
 const FATAL = new Set(['not-allowed', 'service-not-allowed', 'audio-capture', 'network', 'language-not-supported']);
 const MAX_RESTARTS = 40;
+/** After stop(), the service can take a second or more to flush the final words. We wait this long at most, then use what we have. */
+const STOP_GRACE_MS = 650;
+/** Some browsers never fire an audio-start event; treat the mic as ready after this long anyway. */
+const READY_FALLBACK_MS = 1_200;
 
 function recognitionCtor(): RecognitionCtor | null {
   if (typeof window === 'undefined') return null;
@@ -40,9 +46,14 @@ export interface SpeechInput {
   supported: boolean; listening: boolean; error: string | null;
   /** True while the recogniser itself reports that someone is speaking (no second microphone stream needed). */
   speaking: boolean;
+  /** False between tapping the mic and the browser actually capturing audio (permission prompt, service connect). Speak once it is true. */
+  ready: boolean;
   /** Starts dictation. `onText` receives the full transcript so far (replace, don't append). */
   start: (onText: (transcript: string) => void, onEnd?: () => void) => void;
+  /** Ends dictation and delivers what was heard (waits briefly for the last words, never longer than STOP_GRACE_MS). */
   stop: () => void;
+  /** Ends dictation immediately and throws the audio away. */
+  cancel: () => void;
 }
 
 /**
@@ -53,9 +64,12 @@ export function useSpeechInput(lang = 'en-NG'): SpeechInput {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const rec = useRef<Recognition | null>(null);
   const want = useRef(false);
+  const forceEnd = useRef<(() => void) | null>(null);
+  const graceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => { setSupported(recognitionCtor() !== null); return () => { want.current = false; rec.current?.abort(); }; }, []);
 
   const start = useCallback((onText: (t: string) => void, onEnd?: () => void): void => {
@@ -63,8 +77,18 @@ export function useSpeechInput(lang = 'en-NG'): SpeechInput {
     if (!Ctor) return;
     rec.current?.abort();
     want.current = true;
+    let done = false;
     let carry = ''; let full = ''; let restarts = 0; let quiet = 0; let useLang = lang; let fatal = false;
-    const finish = (): void => { want.current = false; setListening(false); setSpeaking(false); onEnd?.(); };
+    let readyTimer: ReturnType<typeof setTimeout> | undefined;
+    const finish = (): void => {
+      if (done) return;
+      clearTimeout(readyTimer);
+      done = true; want.current = false; forceEnd.current = null; clearTimeout(graceTimer.current);
+      setListening(false); setSpeaking(false); setReady(false); onEnd?.();
+    };
+    forceEnd.current = () => { try { rec.current?.abort(); } catch { /* already stopped */ } finish(); };
+    setReady(false);
+    readyTimer = setTimeout(() => setReady(true), READY_FALLBACK_MS);
     const begin = (): void => {
       const r = new Ctor();
       r.lang = useLang; r.continuous = true; r.interimResults = true;
@@ -76,6 +100,8 @@ export function useSpeechInput(lang = 'en-NG'): SpeechInput {
         if (heard !== '') quiet = 0;
         onText(full);
       };
+      r.onstart = () => { clearTimeout(readyTimer); setReady(true); };
+      r.onaudiostart = () => { clearTimeout(readyTimer); setReady(true); };
       r.onspeechstart = () => setSpeaking(true);
       r.onspeechend = () => setSpeaking(false);
       r.onerror = (e) => {
@@ -98,8 +124,14 @@ export function useSpeechInput(lang = 'en-NG'): SpeechInput {
     setError(null);
     try { begin(); setListening(true); } catch { finish(); }
   }, [lang]);
-  const stop = useCallback(() => { want.current = false; rec.current?.stop(); }, []);
-  return { supported, listening, speaking, error, start, stop };
+  const stop = useCallback(() => {
+    want.current = false;
+    try { rec.current?.stop(); } catch { /* already stopped */ }
+    clearTimeout(graceTimer.current);
+    graceTimer.current = setTimeout(() => forceEnd.current?.(), STOP_GRACE_MS);
+  }, []);
+  const cancel = useCallback(() => { want.current = false; forceEnd.current?.(); }, []);
+  return { supported, listening, speaking, ready, error, start, stop, cancel };
 }
 
 export interface SpeechOutput { supported: boolean; speaking: boolean; speak: (text: string) => void; cancel: () => void }
@@ -143,7 +175,7 @@ export function useMicLevels(active: boolean, bars = 40): MicLevels {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
         if (stopped) { stream.getTracks().forEach((t) => t.stop()); return; }
-        ctx = new AudioContext();
+        ctx = new AudioContext({ latencyHint: 'interactive' });
         const src = ctx.createMediaStreamSource(stream);
         const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 100;
         const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4000;

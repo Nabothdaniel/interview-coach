@@ -29,7 +29,7 @@ export interface Question {
   benchmarkAnswer: string;
   keyPoints: string[];
   keywords: string[];
-  /** False until a human (HR professional) has reviewed it. Never claim validation otherwise. */
+  /** True once a human has reviewed it. Do not describe a question as HR-validated unless an HR professional actually did so. */
   reviewed: boolean;
   source: string;
 }

@@ -68,6 +68,10 @@ export function useInterview(runtime: RuntimeState | null) {
   }, [runtime, apply]);
 
   useEffect(() => {
+    if (runtime?.kind === 'ready' && (status === 'ASKING' || status === 'AWAITING_ANSWER')) runtime.warmLlm();
+  }, [status, runtime]);
+
+  useEffect(() => {
     if (domain === null || runtime?.kind !== 'ready') return;
     runtime.progress.setLastDomain(domain);
     setLastDomain(domain);

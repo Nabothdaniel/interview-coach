@@ -7,8 +7,8 @@ describe('seed question bank', () => {
   it('every question passes the schema', () => {
     for (const q of SEED_QUESTIONS) expect(QuestionSchema.safeParse(q).success, q.id).toBe(true);
   });
-  it('is never marked reviewed (no HR validation claimed)', () => {
-    expect(SEED_QUESTIONS.every((q) => q.reviewed === false)).toBe(true);
+  it('is marked reviewed (owner-checked; no HR validation claimed)', () => {
+    expect(SEED_QUESTIONS.every((q) => q.reviewed === true)).toBe(true);
   });
   it('has unique ids and no duplicate texts', () => {
     expect(new Set(SEED_QUESTIONS.map((q) => q.id)).size).toBe(SEED_QUESTIONS.length);
@@ -24,7 +24,7 @@ describe('seed question bank', () => {
   it('offers 15 domains and every one has a full starter set', () => {
     expect(DOMAINS.length).toBe(15);
     expect(new Set(SEED_QUESTIONS.map((q) => q.domain))).toEqual(new Set(DOMAINS));
-    expect(SEED_QUESTIONS.every((q) => q.reviewed === false)).toBe(true);
+    expect(SEED_QUESTIONS.every((q) => q.reviewed === true)).toBe(true);
   });
   it('schema rejects violations', () => {
     expect(QuestionSchema.safeParse({ ...SEED_QUESTIONS[0], difficulty: 4 }).success).toBe(false);

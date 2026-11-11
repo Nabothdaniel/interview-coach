@@ -12,7 +12,6 @@ export function PrivacyContent() {
       <p>By default nothing about your session is stored. If you turn on “Save my progress”, finished sessions are saved to your account: your scores, which questions you were asked and how each rated, and the role you entered. Your answer text is never saved. A few settings (your role, that you accepted the AI notice, your last domain) are also kept in this browser. Your account itself holds your email. You can turn saving off at any time; sessions already saved stay in your history.</p>
       <h3>Known limitations</h3>
       <ul>
-        <li>The starter questions have not been reviewed by an HR professional.</li>
         <li>Scoring runs in your browser, so the scores are for your own coaching only and are not an official assessment.</li>
         <li>Answers marked as non-standard English are never treated as content errors, but the AI can still misread unusual phrasing.</li>
       </ul>

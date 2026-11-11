@@ -14,7 +14,9 @@ export type RuntimeState =
   | { kind: 'needs_signin' }
   | { kind: 'ready'; email: string | null; llm: LlmPort; store: StorePort; clock: ClockPort; progress: ProgressControl;
       /** True when this device had no local profile AND the account lookup failed, so we cannot tell a new user from a returning one. */
-      lookupFailed: boolean };
+      lookupFailed: boolean;
+      /** Starts downloading the AI SDK chunk (once). Called when a question is on screen, so it is ready by the time an answer is sent. */
+      warmLlm: () => void };
 
 /** Opt-in progress saving (default OFF) and the local resume snapshot (no answer text). */
 export interface ProgressControl {
@@ -49,7 +51,6 @@ function readConfig() {
   return Object.values(cfg).every((v) => typeof v === 'string' && v !== '') ? (cfg as Record<keyof typeof cfg, string>) : null;
 }
 
-const WARM_UP_MS = 1_500;
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
 /** Initialises Firebase (and App Check) once. Returns null when the public config is missing. */
@@ -69,20 +70,26 @@ export function getFirebaseApp(): FirebaseApp | null {
 }
 
 /**
- * The AI SDK is the heaviest import and is not needed to render the first screen, so it loads in a separate chunk:
- * warmed shortly after the app is ready (not at startup), and awaited on first use if the user is faster than the warm-up.
+ * The AI SDK is the heaviest import and is not needed to render any screen, so it loads in a separate chunk, only once a question is
+ * on screen (`warm`), and is awaited on first use if the user answers faster than it arrives. Opening the app, onboarding or history never fetches it.
  */
-function createLazyLlm(app: FirebaseApp): LlmPort {
+function createLazyLlm(app: FirebaseApp): { llm: LlmPort; warm: () => void } {
   let loaded: Promise<LlmPort> | null = null;
   const load = (): Promise<LlmPort> => {
     loaded ??= import('../adapters/firebase/llm').then((m) => m.createFirebaseLlm(app)).catch((e: unknown) => { loaded = null; throw e; });
     return loaded;
   };
-  setTimeout(() => { void load().catch(() => undefined); }, WARM_UP_MS);
-  return { generateJson: async (req) => (await load()).generateJson(req) };
+  return { llm: { generateJson: async (req) => (await load()).generateJson(req) }, warm: () => { void load().catch(() => undefined); } };
 }
 
-export async function loadRuntime(): Promise<RuntimeState> {
+let loading: Promise<RuntimeState> | null = null;
+/** One load at a time: a second call while one is running (e.g. React dev double-effects) reuses it instead of repeating the work. */
+export function loadRuntime(): Promise<RuntimeState> {
+  loading ??= buildRuntime().finally(() => { loading = null; });
+  return loading;
+}
+
+async function buildRuntime(): Promise<RuntimeState> {
   const app = getFirebaseApp();
   if (app === null) return { kind: 'unconfigured' };
   const auth = getAuth(app);
@@ -128,10 +135,12 @@ export async function loadRuntime(): Promise<RuntimeState> {
     },
     history: () => listSessions(db, uid),
   };
+  const lazy = createLazyLlm(app);
   return {
     kind: 'ready',
     email: auth.currentUser.email,
-    llm: createLazyLlm(app),
+    llm: lazy.llm,
+    warmLlm: lazy.warm,
     store: createFirestoreStore(db, uid, progress.isOn, { storage: browserStorage(), now: () => Date.now(), ttlMs: CACHE_TTL_MS }),
     clock: { now: () => Date.now() },
     progress,

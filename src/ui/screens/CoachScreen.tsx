@@ -35,7 +35,7 @@ const PLACEHOLDER: Partial<Record<SessionStatus, string>> = {
 };
 
 function Notice({ runtime }: { runtime: RuntimeState | null }) {
-  if (runtime === null) return <p className="ui-notice"><Loading label="Starting up…" /></p>;
+  if (runtime === null) return null;
   if (runtime.kind === 'unconfigured') return <p className="ui-notice">Firebase is not configured. Add the NEXT_PUBLIC_FIREBASE_* values to .env.local and restart.</p>;
   return null;
 }
