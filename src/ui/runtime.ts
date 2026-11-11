@@ -16,7 +16,9 @@ export type RuntimeState =
       /** True when this device had no local profile AND the account lookup failed, so we cannot tell a new user from a returning one. */
       lookupFailed: boolean;
       /** Starts downloading the AI SDK chunk (once). Called when a question is on screen, so it is ready by the time an answer is sent. */
-      warmLlm: () => void };
+      warmLlm: () => void;
+      /** Gemini speech-to-text for browsers without built-in recognition. Loads the AI chunk on first use. */
+      transcribe: (audio: Blob, mimeType: string) => Promise<string> };
 
 /** Opt-in progress saving (default OFF) and the local resume snapshot (no answer text). */
 export interface ProgressControl {
@@ -136,11 +138,17 @@ async function buildRuntime(): Promise<RuntimeState> {
     history: () => listSessions(db, uid),
   };
   const lazy = createLazyLlm(app);
+  let transcriber: Promise<(audio: Blob, mimeType: string) => Promise<string>> | null = null;
+  const transcribe = async (audio: Blob, mimeType: string): Promise<string> => {
+    transcriber ??= import('../adapters/firebase/transcribe').then((m) => m.createFirebaseTranscriber(app)).catch((e: unknown) => { transcriber = null; throw e; });
+    return (await transcriber)(audio, mimeType);
+  };
   return {
     kind: 'ready',
     email: auth.currentUser.email,
     llm: lazy.llm,
     warmLlm: lazy.warm,
+    transcribe,
     store: createFirestoreStore(db, uid, progress.isOn, { storage: browserStorage(), now: () => Date.now(), ttlMs: CACHE_TTL_MS }),
     clock: { now: () => Date.now() },
     progress,

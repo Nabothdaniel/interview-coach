@@ -1,25 +1,4 @@
-/** Pure text clean-up for browser speech-recognition output. No scoring, no content changes: it only repairs how the words are joined and written. */
-
-const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, ' ').trim();
-
-/**
- * Joins recogniser result segments. Some browsers (notably Chrome on Android) re-send the whole phrase as a longer result,
- * which would otherwise repeat words ("go to go to the market"). A segment that extends or repeats the previous one replaces/skips it.
- */
-export function joinSegments(segments: readonly string[]): string {
-  const out: string[] = [];
-  for (const raw of segments) {
-    const seg = raw.trim();
-    if (seg === '') continue;
-    const last = out[out.length - 1];
-    if (last !== undefined) {
-      if (norm(seg).startsWith(norm(last))) { out[out.length - 1] = seg; continue; }
-      if (norm(last).startsWith(norm(seg))) continue;
-    }
-    out.push(seg);
-  }
-  return out.join(' ').replace(/\s+/g, ' ').trim();
-}
+/** Pure text clean-up for transcribed speech. No scoring, no content changes: it only repairs how the words are joined and written. */
 
 /**
  * Light, safe tidy-up: single spaces, no space before punctuation, standalone "i" -> "I", capital at sentence starts,

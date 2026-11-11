@@ -158,7 +158,7 @@ export function CoachScreen({ runtime, onSignOut }: { runtime: RuntimeState | nu
             {answering || iv.status === 'FEEDBACK' ? <><Chip icon="layers" tip={CHIP_TIP.harder} disabled={!canType} onClick={() => void iv.send('harder')}>Harder</Chip><Chip icon="layers" tip={CHIP_TIP.easier} disabled={!canType} onClick={() => void iv.send('easier')}>Easier</Chip><Chip icon="flag" tip={CHIP_TIP.end} disabled={!canType} onClick={() => void iv.send('end')}>End</Chip></> : null}
             {iv.status === 'SUMMARY' ? <Chip icon="layers" tip={CHIP_TIP.again} disabled={!canType} onClick={() => void iv.send('change domain')}>Practise again</Chip> : null}
           </div>
-          <Composer onMicStart={cancel} disabled={!canType} maxLength={MAX_ANSWER_CHARS} onSend={(t) => void iv.send(t)} placeholder={canType ? PLACEHOLDER[iv.status] ?? 'Type a message' : STATUS_LABEL[iv.status]} />
+          <Composer onMicStart={cancel} {...(runtime?.kind === 'ready' ? { transcribe: runtime.transcribe } : {})} disabled={!canType} maxLength={MAX_ANSWER_CHARS} onSend={(t) => void iv.send(t)} placeholder={canType ? PLACEHOLDER[iv.status] ?? 'Type a message' : STATUS_LABEL[iv.status]} />
         </Pane>
 
         <Pane variant="aside" label="Insights" title="Insights">

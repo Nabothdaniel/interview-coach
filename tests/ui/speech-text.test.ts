@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendTranscript, joinSegments, tidyTranscript } from '../../src/ui/speechText';
-
-describe('joinSegments', () => {
-  it('joins separate segments with one space', () => expect(joinSegments(['hello there', ' my name is Ada '])).toBe('hello there my name is Ada'));
-  it('drops cumulative duplicates re-sent by some browsers', () => {
-    expect(joinSegments(['go to', 'go to the', 'go to the market'])).toBe('go to the market');
-    expect(joinSegments(['go to the market', 'go to'])).toBe('go to the market');
-  });
-  it('ignores empty segments', () => expect(joinSegments(['', '  ', 'ok'])).toBe('ok'));
-});
+import { appendTranscript, tidyTranscript } from '../../src/ui/speechText';
 
 describe('tidyTranscript', () => {
   it('fixes spacing, "i" and sentence capitals', () => expect(tidyTranscript('i  think i can do it . then i would  ask')).toBe('I think I can do it. Then I would ask.'));
